@@ -5,9 +5,13 @@ import java.util.Scanner;
 import java.util.Arrays;
 import java.io.PrintWriter;
 import java.io.File;
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.util.ArrayList;
+import java.lang.Thread;
 
 public class Factoring {
-	private int[] primes;
+	private int[] primes,array_r;
 	private BigInteger N;
 	private int[][] binMat;
 	private int eq,limit;
@@ -16,6 +20,7 @@ public class Factoring {
 		this.N = N;
 		primes = new int[limit];
 		eq = limit+2;
+		array_r = new int[eq];
 		this.limit = limit;
 		binMat = new int[eq][limit];
 	}
@@ -44,6 +49,7 @@ public class Factoring {
 					if (!same){
 						for (int i = 0; i < factors.length; i++){
 							binMat[nbrEq][i] = factors[i];
+							array_r[nbrEq] = r;
 							pw.print(factors[i] + " ");
 						}
 						pw.println("");
@@ -63,7 +69,39 @@ public class Factoring {
 	}
 
 	public BigInteger getFactor(){
-		//ProcessBuilder pb = new ProcessBuilder("./GaussBin")
+
+		try (BufferedReader in = new BufferedReader(new FileReader("out.txt"));){
+			String s = in.readLine();
+			int nbrSol = Integer.parseInt(s);
+			ArrayList<Integer> indices = new ArrayList<Integer>();
+			for (int i = 0; i < nbrSol; i++){
+				s = in.readLine();
+				int lastIndex = -1;
+				while (s.indexOf('1',lastIndex+1) != -1){
+					lastIndex = s.indexOf('1', lastIndex+1);
+					indices.add(lastIndex/2);
+				}
+				int x = 1;
+				int y = 1;
+				for (int index : indices){
+					x = x * array_r[index];
+					for (int j = 0; j < limit; j++){
+						int temp = binMat[index][j]*primes[j];
+						if (temp != 0){
+							y = y*temp;
+						}
+					}
+				}
+				System.out.println("x: " + x + " y: " + y);
+				y = (int)Math.sqrt(y);
+				BigInteger gcd = N.gcd(BigInteger.valueOf(y-x));
+				if (gcd.intValue() != 1 && gcd.compareTo(N) != 0){
+					return gcd;
+				}
+			}
+		} catch (Exception e){
+			e.printStackTrace();
+		}
 		return null;
 	}
 
@@ -85,7 +123,7 @@ public class Factoring {
 		while (primeIndex < primes.length && nbr != 1){
 			if (nbr % primes[primeIndex] == 0){
 				nbr = nbr/primes[primeIndex];
-				factors[primeIndex] = (factors[primeIndex]+1)%2;
+				factors[primeIndex] = (factors[primeIndex]+1);
 			} else {
 				primeIndex++;
 			}
@@ -127,6 +165,21 @@ public class Factoring {
 		// 	}
 		// 	System.out.println("");
 		// }
+		ProcessBuilder pb = new ProcessBuilder("./a.out","matrix.txt","out.txt");
+		try{
+			final Process p=pb.start();
+			Thread.sleep(1000);
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+		BigInteger factor = fact.getFactor();
+		if (factor != null){
+			BigInteger factor2 = N.divide(factor);
+			System.out.println("The factors of " + N + " are " + factor + " and " + factor2);
+		} else {
+			System.out.println("No solution");
+		}
+
 	}
 
 }
