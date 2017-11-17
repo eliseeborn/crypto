@@ -33,9 +33,13 @@ public class Factoring {
 			System.out.println("No solution found.");
 		}
 		final long endTime = System.currentTimeMillis();
-		System.out.println("Total execution time: " + (endTime - startTime)/1000 + " seconds");
+		System.out.println("Total execution time: " + (endTime - startTime) / 1000 + " seconds");
 	}
 
+	/**
+	 * Takes N and size of factorbase. Sets up necessary data structures. Reads
+	 * necessary number of primes from primes.txt.
+	 */
 	private void setUp() {
 		System.out.println("Enter N: ");
 		Scanner sc = new Scanner(System.in);
@@ -43,15 +47,14 @@ public class Factoring {
 		System.out.println("Enter size of factorbase: ");
 		factorbaseSize = sc.nextInt();
 		sc.close();
-		
+
 		factorbase = new ArrayList<Integer>(factorbaseSize);
 		relations = factorbaseSize;
-		
+
 		exponentList = new int[relations][factorbaseSize];
 		savedr = new ArrayList<BigInteger>(relations);
 		binMat = new int[relations][factorbaseSize];
-		
-		//Read in the correct number primes from primes.txt
+
 		System.out.print("Reading primes from primes.txt...");
 		try (Scanner scanner = new Scanner(new File("primes.txt"))) {
 			int index = 0;
@@ -65,6 +68,13 @@ public class Factoring {
 		System.out.println(" DONE");
 	}
 
+	/**
+	 * Works together with checkIfSmooth(BigInteger r, int nbrRel). Calculates r
+	 * from small k and j, then checks so that r^2modN can be completely factorized
+	 * by the prime numbers in the factorbase. If so, saves r and all the factors
+	 * and their corresponding exponentials if they're not already saved. Repeats
+	 * until enough relations have been found.
+	 */
 	private void quadSieve() {
 		System.out.print("Generating " + relations + " relations for the matrix...");
 
@@ -78,7 +88,7 @@ public class Factoring {
 					nbrRelations++;
 					System.out.println("Relations found: " + nbrRelations + "/" + relations);
 				}
-				if(!(nbrRelations < relations)){ 
+				if (!(nbrRelations < relations)) {
 					break;
 				}
 			}
@@ -88,6 +98,9 @@ public class Factoring {
 		System.out.println(" DONE");
 	}
 
+	/**
+	 * See above
+	 */
 	private boolean checkIfSmooth(BigInteger r, int nbrRel) {
 		// r2 must not be 0 or 1.
 		BigInteger r2 = r.pow(2).mod(N);
@@ -145,26 +158,13 @@ public class Factoring {
 	}
 
 	/**
-	 * Provided by the course
-	 * 
-	 * @param x
-	 * @return
+	 * Writes the corresponding exponents for all the found relations to matrix.txt
+	 * in the format requested by GaussBin.exe. Runs GaussBin.exe and saves the
+	 * output to out.txt. Reads out.txt and saves the binary content into a
+	 * ArrayList. Returns said ArrayList.
 	 */
-	private BigInteger squareRoot(BigInteger x) {
-		BigInteger right = x, left = BigInteger.ZERO, mid;
-		while (right.subtract(left).compareTo(BigInteger.ONE) > 0) {
-			mid = (right.add(left)).shiftRight(1);
-			if (mid.multiply(mid).compareTo(x) > 0)
-				right = mid;
-			else
-				left = mid;
-		}
-		return left;
-	}
-
 	private ArrayList<boolean[]> runGauss() {
 		System.out.print("Running GaussBin.exe... ");
-		// Write to matrix.txt
 		try {
 			File file = new File("matrix.txt");
 			PrintWriter pw = new PrintWriter(file);
@@ -183,7 +183,6 @@ public class Factoring {
 			e.printStackTrace();
 		}
 
-		// Run GaussBin.exe, input is matrix.txt, output is out.txt
 		try {
 			ProcessBuilder pb = new ProcessBuilder("Gaussbin.exe", "matrix.txt", "out.txt");
 			final Process p = pb.start();
@@ -192,7 +191,6 @@ public class Factoring {
 			e.printStackTrace();
 		}
 
-		// Read out.txt
 		ArrayList<boolean[]> solutions = new ArrayList<boolean[]>();
 		try {
 			BufferedReader br = new BufferedReader(new FileReader("out.txt"));
@@ -202,11 +200,6 @@ public class Factoring {
 				boolean[] solutionRow = new boolean[exponentList.length];
 				String[] line = str.split(" ");
 				for (int i = 0; i < exponentList.length; i++) {
-//					if (line.length != exponentList.length) {
-//						System.out.println("Mismatched amount of elements!  s: " + s);
-//						System.out.println("file says: " + line.length + " program says " + exponentList.length);
-//						System.exit(0);
-//					}
 					solutionRow[i] = Integer.parseInt(line[i]) == 1 ? true : false;
 				}
 				solutions.add(solutionRow);
@@ -219,6 +212,13 @@ public class Factoring {
 		return solutions;
 	}
 
+	/**
+	 * Given the ArrayList, for each array, multiplies the rows where the
+	 * corresponding binary value == true. Values are fetched from the data
+	 * structures previously used to save the necessary values. Results in x^2 and
+	 * y^2 where x^2 = y^2 mod N. From there, calculate gcd(y-x, N). Return result
+	 * if not invalid (= 1 or N).
+	 */
 	private BigInteger tryAllSolutions(ArrayList<boolean[]> gaussResults) {
 		System.out.print("Trying all solutions... ");
 		for (boolean[] solution : gaussResults) {
@@ -251,6 +251,18 @@ public class Factoring {
 		}
 		System.out.println("DONE");
 		return null;
+	}
+
+	private BigInteger squareRoot(BigInteger x) {
+		BigInteger right = x, left = BigInteger.ZERO, mid;
+		while (right.subtract(left).compareTo(BigInteger.ONE) > 0) {
+			mid = (right.add(left)).shiftRight(1);
+			if (mid.multiply(mid).compareTo(x) > 0)
+				right = mid;
+			else
+				left = mid;
+		}
+		return left;
 	}
 
 }
