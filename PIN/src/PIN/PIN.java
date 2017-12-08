@@ -20,7 +20,7 @@ public class PIN {
 			for (int i = 0; i < 10003; i++) {
 				int z10 = nextZ10(deBruijn2.nextVal(), deBruijn5.nextVal());
 				pw.print(z10);
-				System.out.println(z10);
+//				System.out.println(z10);
 			}
 			pw.flush();
 			pw.close();
